@@ -1,16 +1,63 @@
-name: PR Validation
-
+name: Salesforce CI/CD
 on:
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
+  push:
+    branches: [main] # for deployment after merge
 jobs:
   validate:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: npm install -g @salesforce/cli
+      - run: sf plugins install sfdx-git-delta
+      - run: mkdir delta
+      - name: Generate delta
+        run: |
+          sf sgd source delta \
+            --to HEAD \
+            --from origin/main \
+            --output-dir delta \
+            --generate-delta
+      - name: Validate deployment
+        run: |
+          sf project deploy start \
+            --manifest delta/package/package.xml \
+            --target-org ${{ secrets.USERNAME }} \
+            --check-only \
+            --test-level RunLocalTests
 
-      - name: Test pipeline
-        run: echo "CI is working"
+  deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: npm install -g @salesforce/cli
+      - run: sf plugins install sfdx-git-delta
+      - run: mkdir delta
+      - name: Generate delta
+        run: |
+          sf sgd source delta \
+            --to HEAD \
+            --from HEAD~1 \
+            --output-dir delta \
+            --generate-delta
+      - name: Authenticate Dev2
+        run: |
+          echo "${{ secrets.JWT_KEY }}" > server.key
+          sf org login jwt \
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.USERNAME }} \
+            --instance-url https://login.salesforce.com
+      - name: Deploy to Dev2
+        run: |
+          sf project deploy start \
+            --manifest delta/package/package.xml \
+            --target-org ${{ secrets.USERNAME }} \
+            --test-level RunLocalTests
