@@ -27,9 +27,8 @@ jobs:
 
       - name: Install Salesforce CLI
         run: |
-          npn install -global @salesforce/cli
+          npx @salesforce/cli --version
           echo "Salesforce CLI installed"
-          sf --version
 
       - name: Authenticate to Dev2 org
         run: echo "${{ secrets.DEV2_AUTH_URL }}"  > auth.sf org login sfdx-url -f auth.txt -a dev2
