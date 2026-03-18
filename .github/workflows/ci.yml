@@ -10,13 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Test pipeline
         run: echo "CI is working"
 
       - name: Install Salesforce CLI
-        run: npn install -g @salesforce/CLI
+        run: |
+          npn install -global @salesforce/cli
+          echo "Salesforce CLI installed"
+          sf --version
 
       - name: Authenticate to Dev2 org
         run: echo "${{ secrets.DEV2_AUTH_URL }}"  > auth.sf org login sfdx-url -f auth.txt -a dev2
