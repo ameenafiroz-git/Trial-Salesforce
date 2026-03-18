@@ -1,63 +1,25 @@
-name: Salesforce CI/CD
+name: PR Validation
+
 on:
   pull_request:
-    branches: [main]
-  push:
-    branches: [main] # for deployment after merge
+    branches:
+      - main
+
 jobs:
   validate:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - run: npm install -g @salesforce/cli
-      - run: sf plugins install sfdx-git-delta
-      - run: mkdir delta
-      - name: Generate delta
-        run: |
-          sf sgd source delta \
-            --to HEAD \
-            --from origin/main \
-            --output-dir delta \
-            --generate-delta
-      - name: Validate deployment
-        run: |
-          sf project deploy start \
-            --manifest delta/package/package.xml \
-            --target-org ${{ secrets.USERNAME }} \
-            --check-only \
-            --test-level RunLocalTests
 
-  deploy:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - run: npm install -g @salesforce/cli
-      - run: sf plugins install sfdx-git-delta
-      - run: mkdir delta
-      - name: Generate delta
-        run: |
-          sf sgd source delta \
-            --to HEAD \
-            --from HEAD~1 \
-            --output-dir delta \
-            --generate-delta
-      - name: Authenticate Dev2
-        run: |
-          echo "${{ secrets.JWT_KEY }}" > server.key
-          sf org login jwt \
-            --client-id ${{ secrets.CLIENT_ID }} \
-            --jwt-key-file server.key \
-            --username ${{ secrets.USERNAME }} \
-            --instance-url https://login.salesforce.com
+      - uses: actions/checkout@v3
+
+      - name: Test pipeline
+        run: echo "CI is working"
+
+      - name: Install Salesforce CLI
+        run: npn install -g @salesforce/CLI
+
+      - name: Authenticate to Dev2 org
+        run: echo "${{ secrets.DEV2_AUTH_URL}"  > auth.sf org login sfdx-url -f auth.txt -a dev2
+
       - name: Deploy to Dev2
-        run: |
-          sf project deploy start \
-            --manifest delta/package/package.xml \
-            --target-org ${{ secrets.USERNAME }} \
-            --test-level RunLocalTests
+        run: sf project deploy start \ --manifest/package.xml \ --target-org dev2 \--wait 10
