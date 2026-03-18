@@ -34,4 +34,4 @@ jobs:
         run: echo "${{ secrets.DEV2_AUTH_URL }}"  > auth.txt npx @salesforce/cli org login sfdx-url -f auth.txt -a dev2
 
       - name: Deploy to Dev2
-        run: npx @salesforce/cli sf project deploy start \ --manifest/package.xml \ --target-org dev2 \--wait 10
+        run: npx @salesforce/cli sf project deploy start --manifest manifest/package.xml --target-org dev2 \--wait 10
