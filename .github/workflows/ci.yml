@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with: node-version:18
 
       - name: Test pipeline
         run: echo "CI is working"
@@ -26,10 +27,11 @@ jobs:
           node -v
           npm -v
 
-      - name: Install Salesforce CLI
+      - name: Install Salesforce CLI+SGD
         run: |
           npx @salesforce/cli --version
           echo "Salesforce CLI installed"
+          npm install -g sfdx-git-delta
 
       - name: Verify org login
         run: npx @salesforce/cli org list
@@ -44,6 +46,12 @@ jobs:
 
       - name: Debug metadata
         run: find force-app -type f
+
+      - name: Generate delta
+        run: sfdx sgd:source:delta --to HEAD --from origin/main --output-dir delta --generate-delta
+
+      - name: Validate Deployment
+        run: npx @salesforce/cli project deploy start --manifest force-app/main/default/manifest/package.xml --target-org dev2 --check-only --wait 10
 
       - name: Deploy to Dev2
         run: npx @salesforce/cli project deploy start --manifest force-app/main/default/manifest/package.xml --target-org dev2 --wait 10
