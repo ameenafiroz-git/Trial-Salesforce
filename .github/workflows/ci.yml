@@ -12,7 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with: node-version:18
+        with:
+          node-version: 18
 
       - name: Test pipeline
         run: echo "CI is working"
