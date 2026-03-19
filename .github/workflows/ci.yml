@@ -62,7 +62,15 @@ jobs:
           --generate-delta
 
       - name: Validate Deployment
-        run: npx @salesforce/cli project deploy start --manifest force-app/main/default/manifest/package.xml --target-org dev2 --dry-run --wait 10
+        run: |
+          sf project deploy start \
+            --source-dir delta \
+            --target-org dev2 \
+            --dry-run \
+            --wait 10
 
       - name: Deploy to Dev2
-        run: npx @salesforce/cli project deploy start --manifest force-app/main/default/manifest/package.xml --target-org dev2 --wait 10
+        run: sf project deploy start \
+          --source-dir delta \
+          --target-org dev2 \
+          --wait 10
