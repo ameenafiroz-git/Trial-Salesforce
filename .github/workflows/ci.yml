@@ -39,7 +39,7 @@ jobs:
           echo "${{ secrets.DEV2_AUTH_URL }}" | tr -d '\r' > auth.txt
           npx @salesforce/cli org login sfdx-url -f auth.txt -a dev2
 
-      - name:Debug files
+      - name: Debug files
         run:ls -la
 
       - name: Deploy to Dev2
