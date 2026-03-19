@@ -69,6 +69,7 @@ jobs:
           fi
 
       - name: Validate Deployment
+        if: steps.check_delta.outputs.empty =='false'
         run: |
           sf project deploy start \
             --source-dir delta \
@@ -77,6 +78,7 @@ jobs:
             --wait 10
 
       - name: Deploy to Dev2
+        if: steps.check_delta.outputs.empty =='false'
         run: sf project deploy start \
           --source-dir delta \
           --target-org dev2 \
