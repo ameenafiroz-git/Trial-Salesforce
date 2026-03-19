@@ -32,7 +32,7 @@ jobs:
         run: |
           npm install -g @salesforce/cli
           echo "Salesforce CLI is installed"
-          sf plugins install sfdx-git-delta
+          echo Y | sf plugins install sfdx-git-delta
 
       - name: Check plugins
         run: sf plugins
@@ -52,7 +52,12 @@ jobs:
         run: find force-app -type f
 
       - name: Generate delta
-        run: sf sgd:source:delta --to HEAD --from origin/main --output-dir delta --generate-delta
+        run: |
+          sf sgd:source:delta \
+          --to HEAD \
+          --from origin/main \
+          --output-dir delta \
+          --generate-delta
 
       - name: Validate Deployment
         run: npx @salesforce/cli project deploy start --manifest force-app/main/default/manifest/package.xml --target-org dev2 --check-only --wait 10
