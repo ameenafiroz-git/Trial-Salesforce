@@ -53,7 +53,9 @@ jobs:
 
       - name: Generate delta
         run: |
-          sf sgd:source:delta \
+          mkdir -p delta
+
+          sf sgd source delta \
           --to HEAD \
           --from origin/main \
           --output-dir delta \
