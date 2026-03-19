@@ -1,0 +1,85 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - dev2
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test pipeline
+        run: echo "CI is working"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Verify Node and npm
+        run: |
+          node -v
+          npm -v
+
+      - name: Install Salesforce CLI+SGD
+        run: |
+          npm install -g @salesforce/cli
+          echo "Salesforce CLI is installed"
+          echo Y | sf plugins install sfdx-git-delta
+
+      - name: Check plugins
+        run: sf plugins
+
+      - name: Verify org login
+        run: npx @salesforce/cli org list
+
+      - name: Authenticate to Dev2 org
+        run: |
+          echo "${{ secrets.DEV2_AUTH_URL }}" | tr -d '\r' > auth.txt
+          npx @salesforce/cli org login sfdx-url -f auth.txt -a dev2
+
+      - name: Debug files
+        run: ls -la
+
+      - name: Debug metadata
+        run: find force-app -type f
+
+      - name: Generate delta
+        run: |
+          mkdir -p delta
+
+          sf sgd source delta \
+          --to HEAD \
+          --from origin/main \
+          --output-dir delta \
+          --generate-delta
+
+      - name: Check delta // to avoid pipeline fails on empty delta
+        run: |
+          if [ ! -d "delta " ] || [-z "$(ls -A delta)" ]; then
+            echo "No changes to deploy. Skipping...."
+            exit 0
+          fi
+
+      - name: Validate Deployment
+        if: steps.check_delta.outputs.empty =='false'
+        run: |
+          sf project deploy start \
+            --source-dir delta \
+            --target-org dev2 \
+            --dry-run \
+            --wait 10
+
+      - name: Deploy to Dev2
+        if: steps.check_delta.outputs.empty =='false'
+        run: sf project deploy start \
+          --source-dir delta \
+          --target-org dev2 \
+          --wait 10
