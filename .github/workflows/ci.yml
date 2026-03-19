@@ -35,7 +35,7 @@ jobs:
           sf plugins install sfdx-git-delta
 
       - name: Check plugins
-          sf plugins
+        run: sf plugins
 
       - name: Verify org login
         run: npx @salesforce/cli org list
