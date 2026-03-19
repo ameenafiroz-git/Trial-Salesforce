@@ -42,5 +42,8 @@ jobs:
       - name: Debug files
         run: ls -la
 
+      - name: Debug metadata
+        run: find force-app -type f
+
       - name: Deploy to Dev2
         run: npx @salesforce/cli project deploy start --manifest force-app/main/default/manifest/package.xml --target-org dev2 --wait 10
