@@ -61,6 +61,12 @@ jobs:
           --output-dir delta \
           --generate-delta
 
+      - name: Check delta // to avoid pipeline fails on empty delta
+        run: |
+          if [ ! -d "delta "] || [-z "$(ls -A delta)" ]; then
+            echo "No changes to deploy. Skipping...."
+            exit 0
+
       - name: Validate Deployment
         run: |
           sf project deploy start \
@@ -69,11 +75,7 @@ jobs:
             --dry-run \
             --wait 10
 
-      - name: Check delta // to avoid pipeline fails on empty delta
-        run: |
-          if [ ! -d "delta "] || [-z "$(ls -A delta)" ]; then
-            echo "No changes to deploy. Skipping...."
-            exit 0
+
           fi
 
       - name: Deploy to Dev2
