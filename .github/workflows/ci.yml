@@ -56,7 +56,7 @@ jobs:
       - name: Authenticate to Dev2 org
         run: |
           echo "${{ secrets.JWT_KEY }}" > server.key
-          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --alias dev2
+          sf org login jwt grant --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --alias dev2
 
       - name: Verify org login
         run: sf org display --target-org dev2
