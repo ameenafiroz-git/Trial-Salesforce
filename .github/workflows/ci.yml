@@ -50,13 +50,13 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      - name: Authenticate to Dev2 org
+      - name: Check dev2 authentication
         run: |
           echo "${{ secrets.JWT_KEY }}" > server.key
       - name: Authenticate to Dev2 org
         run: |
           echo "${{ secrets.JWT_KEY }}" > server.key
-          sf org login jwt grant --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --alias dev2
+          sfdx auth:jwt:grant --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --alias dev2
 
       - name: Verify org login
         run: sf org display --target-org dev2
