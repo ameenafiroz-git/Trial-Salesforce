@@ -48,14 +48,14 @@ jobs:
       - name: Debug secrets
         run: |
           echo "Key exists?"
-          echo "${{ secret.JWT_KEY }}" | wc -c
+          echo "${{ secrets.JWT_KEY }}" | wc -c
 
       - name: Authenticate to Dev2 org
         run: |
           echo "${{ secrets.JWT_KEY }}" > server.key
           sf org login jwt \
             --client-id ${{ secrets.CLIENT_ID }} \
-            --jwt-key-file server.JWT_KEY \
+            --jwt-key-file ${{ server.JWT_KEY }} \
             --username ${{ secrets.USERNAME }} \
             --instance-url https://test.salesforce.com \
             --alias dev2
