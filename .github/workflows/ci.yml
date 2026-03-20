@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - dev2
+      - feature/dummy-ci
 
   push:
     branches:
