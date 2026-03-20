@@ -5,6 +5,10 @@ on:
     branches:
       - dev2
 
+  push:
+    branches:
+      - dev2
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -42,8 +46,16 @@ jobs:
 
       - name: Authenticate to Dev2 org
         run: |
-          echo "${{ secrets.DEV2_AUTH_URL }}" | tr -d '\r' > auth.txt
-          npx @salesforce/cli org login sfdx-url -f auth.txt -a dev2
+          echo "${{ secrets.JWT_KEY }}" > server.key
+          sf org login jwt \
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.USERNAME }} \
+            --instance-url https://test.salesforce.com \
+            --alias dev2
+
+      - name: Verify org login
+        run: sf org display --target-org dev2
 
       - name: Debug files
         run: ls -la
@@ -62,24 +74,27 @@ jobs:
           --generate-delta
 
       - name: Check delta // to avoid pipeline fails on empty delta
+        id: check_delta
         run: |
           if [ ! -d "delta " ] || [-z "$(ls -A delta)" ]; then
             echo "No changes to deploy. Skipping...."
             exit 0
           fi
 
-      - name: Validate Deployment
-        if: steps.check_delta.outputs.empty =='false'
+      - name: Validate (PR only)
+        if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
         run: |
           sf project deploy start \
             --source-dir delta \
             --target-org dev2 \
             --dry-run \
+            --test-level RunLocalTests \
             --wait 10
 
-      - name: Deploy to Dev2
-        if: steps.check_delta.outputs.empty =='false'
+      - name: Deploy to Dev2 (on merge)
+        if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
         run: sf project deploy start \
           --source-dir delta \
           --target-org dev2 \
+          --test-level RunLocalTests
           --wait 10
