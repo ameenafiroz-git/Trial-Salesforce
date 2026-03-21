@@ -50,7 +50,7 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      - name: Authorise Dev2
+      - name: Authorise Dev2 org
         run: |
           echo "${{ secrets.JWT_KEY }}" > server.key
           echo "JWT FILE"
