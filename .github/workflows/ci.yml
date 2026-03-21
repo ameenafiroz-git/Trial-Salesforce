@@ -51,10 +51,9 @@ jobs:
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
       - name: Authorise Dev2 org
-        run:
+        run: |
           echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
-        run: sf org list
 
       - name: Verify login
         run: sf org display --target-org ${{ secrets.USERNAME }}
