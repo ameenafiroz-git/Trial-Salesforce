@@ -62,6 +62,8 @@ jobs:
           --instance-url https://test.salesforce.com \
           --set-default-username \
           --alias dev2
+          echo  "$CMD"
+          eval $CMD
 
       - name: Verify org dev2 login
         run: sf org display --target-org dev2
