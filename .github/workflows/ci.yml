@@ -109,8 +109,8 @@ jobs:
       - name: Deploy to Dev2 (on merge)
         if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
         run: >-
-          sf project deploy start \
-          --source-dir delta \
-          --target-org dev2 \
-          --test-level NoTestRun \
+          sf project deploy start
+          --source-dir delta
+          --target-org dev2
+          --test-level NoTestRun
           --wait 10
