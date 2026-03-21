@@ -111,5 +111,5 @@ jobs:
         run: sf project deploy start \
           --source-dir delta \
           --target-org dev2 \
-          --test-level RunLocalTests
+          --test-level RunLocalTests \
           --wait 10
