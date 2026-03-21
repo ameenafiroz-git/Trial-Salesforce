@@ -52,7 +52,8 @@ jobs:
 
       - name: Authorise Dev2 org
         run: |
-          echo "${{ secrets.JWT_KEY }}" > server.key
+          echo "${{ secrets.JWT_KEY }}" > server.key | base64 --decode > server.key
+          ls -la
           echo "JWT FILE"
           cat server.key
           echo "........................................"
