@@ -4,6 +4,11 @@ on:
   pull_request:
     branches:
       - dev2
+      - feature/dummy-ci
+
+  push:
+    branches:
+      - dev2
 
 jobs:
   validate:
@@ -40,10 +45,18 @@ jobs:
       - name: Verify org login
         run: npx @salesforce/cli org list
 
-      - name: Authenticate to Dev2 org
+      - name: Debug secrets
         run: |
-          echo "${{ secrets.DEV2_AUTH_URL }}" | tr -d '\r' > auth.txt
-          npx @salesforce/cli org login sfdx-url -f auth.txt -a dev2
+          echo "Key exists?"
+          echo "${{ secrets.JWT_KEY }}" | wc -c
+
+      - name: Authorise Dev2 org
+        run: |
+          echo "${{ secrets.DEV2_AUTH_URL }}" > auth.txt
+          sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
+
+      - name: Verify login
+        run: sf org display --target-org dev2
 
       - name: Debug files
         run: ls -la
@@ -55,31 +68,37 @@ jobs:
         run: |
           mkdir -p delta
 
-          sf sgd source delta \
+          sf sgd:source:delta \
           --to HEAD \
-          --from origin/main \
+          --from origin/dev2 \
           --output-dir delta \
           --generate-delta
 
       - name: Check delta // to avoid pipeline fails on empty delta
+        id: check_delta
         run: |
           if [ ! -d "delta " ] || [-z "$(ls -A delta)" ]; then
             echo "No changes to deploy. Skipping...."
+            echo "empty=true" >> $GITHUB_OUTPUT
+          else
+            echo "empty=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-      - name: Validate Deployment
-        if: steps.check_delta.outputs.empty =='false'
+      - name: Validate (PR only)
+        if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
         run: |
           sf project deploy start \
             --source-dir delta \
             --target-org dev2 \
             --dry-run \
+            --test-level RunLocalTests \
             --wait 10
 
-      - name: Deploy to Dev2
-        if: steps.check_delta.outputs.empty =='false'
+      - name: Deploy to Dev2 (on merge)
+        if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
         run: sf project deploy start \
           --source-dir delta \
           --target-org dev2 \
+          --test-level RunLocalTests
           --wait 10
