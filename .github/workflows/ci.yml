@@ -58,8 +58,7 @@ jobs:
           sfdx auth:jwt:grant \
           --client-id ${{ secrets.CLIENT_ID }} \
           --jwt-key-file server.key \
-          --username ${{ secrets.USERNAME }} \
-          --instance-url https://test.salesforce.com \
+          --username ${{ secrets.USERNAME }} instance-url https://test.salesforce.com \
           --set-default-username \
           --alias dev2
           echo  "$CMD"
