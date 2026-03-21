@@ -50,9 +50,6 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      - name: Verify org dev2 login
-        run: sf org display --target-org dev2
-
       - name: Authorise Dev2
         run: |
           echo "${{ secrets.JWT_KEY }}" > server.Key
