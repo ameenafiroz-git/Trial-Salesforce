@@ -53,6 +53,17 @@ jobs:
       - name: Verify org dev2 login
         run: sf org display --target-org dev2
 
+      - name: Authorise Dev2
+        run: |
+          echo "${{ secrets.JWT_KEY }}" > server.Key
+          sfdx auth:jwt:grant \
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.USERNAME }} \
+            --instance-url https://test.salesforce.com \
+            --set-default-username \
+            --alias Dev2
+
       - name: Debug files
         run: ls -la
 
