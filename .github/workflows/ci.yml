@@ -51,8 +51,9 @@ jobs:
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
       - name: Authorise Dev2 org
-        run: echo "${{ secrets.JWT_KEY }}" | base64 --decode > server.key && sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --set-default-username --alias dev2
-      - name: Check org list
+        run:
+          echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+          sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
         run: sf org list
 
       - name: Verify login
