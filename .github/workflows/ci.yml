@@ -52,6 +52,7 @@ jobs:
 
       - name: Authenticate to Dev2 org
         run: |
+          set -x
           echo "Start"
           echo "${{ secrets.JWT_KEY }}" > server.key
           echo "echo sfdx"
