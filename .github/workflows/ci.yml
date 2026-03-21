@@ -56,7 +56,7 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
 
       - name: Verify login
-        run: sf org display --target-org ${{ secrets.USERNAME }}
+        run: sf org display --target-org dev2
 
       - name: Debug files
         run: ls -la
@@ -79,6 +79,9 @@ jobs:
         run: |
           if [ ! -d "delta " ] || [-z "$(ls -A delta)" ]; then
             echo "No changes to deploy. Skipping...."
+            echo "empty=true" >> $GITHUB_OUTPUT
+          else
+            echo "empty=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
