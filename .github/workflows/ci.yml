@@ -52,7 +52,7 @@ jobs:
 
       - name: Authorise Dev2 org
         run: |
-          echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+          echo "${{ secrets.DEV2_AUTH_URL }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
 
       - name: Verify login
