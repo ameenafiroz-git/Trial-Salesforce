@@ -56,7 +56,7 @@ jobs:
           echo "JWT FILE"
           cat server.key
           echo "........................................"
-          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --set-default-username --alias dev2
+          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --set-default-username --alias dev2 --set-default
 
       - name: Check org list
         run: sf org list
