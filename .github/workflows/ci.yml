@@ -74,6 +74,11 @@ jobs:
           --output-dir delta \
           --generate-delta
 
+      - name: Show delta content
+        run: |
+          echo "Listing delta folder"
+          ls -R delta || echo "No delta found"
+
       - name: Check delta // to avoid pipeline fails on empty delta
         id: check_delta
         run: |
