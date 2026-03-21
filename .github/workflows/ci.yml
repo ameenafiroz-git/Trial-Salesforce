@@ -82,12 +82,11 @@ jobs:
       - name: Check delta // to avoid pipeline fails on empty delta
         id: check_delta
         run: |
-          if [ ! -d "delta " ] || [-z "$(ls -A delta)" ]; then
+          if [ -z "$(find delta -type -f -name '*.xml')" ]; then
             echo "No changes to deploy. Skipping...."
             echo "empty=true" >> $GITHUB_OUTPUT
           else
             echo "empty=false" >> $GITHUB_OUTPUT
-            exit 0
           fi
 
       - name: Validate (PR only)
