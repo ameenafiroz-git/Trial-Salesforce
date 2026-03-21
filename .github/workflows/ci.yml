@@ -67,12 +67,19 @@ jobs:
       - name: Generate delta
         run: |
           mkdir -p delta
-
-          sf sgd:source:delta \
-          --to HEAD \
-          --from origin/dev2 \
-          --output-dir delta \
-          --generate-delta
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            sf sgd source delta \
+            --to HEAD \
+            --from origin/dev2 \
+            --output-dir delta \
+            --generate-delta
+          else
+            sf sgd source delta \
+            --to HEAD \
+            --from HEAD~1 \
+            --output-dir delta \
+            --generate-delta
+          fi
 
       - name: Show delta content
         run: |
@@ -82,7 +89,7 @@ jobs:
       - name: Check delta // to avoid pipeline fails on empty delta
         id: check_delta
         run: |
-          if [ -z "$(find delta -type f -name '*.xml')" ]; then
+          if [ -z "$(find delta/force-app -type f -name '*.xml')" ]; then
             echo "No changes to deploy. Skipping...."
             echo "empty=true" >> $GITHUB_OUTPUT
           else
