@@ -52,7 +52,7 @@ jobs:
 
       - name: Authorise Dev2
         run: |
-          echo "${{ secrets.JWT_KEY }}" > server.Key
+          echo "${{ secrets.JWT_KEY }}" > server.key
           sfdx auth:jwt:grant \
             --client-id ${{ secrets.CLIENT_ID }} \
             --jwt-key-file server.key \
