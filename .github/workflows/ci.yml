@@ -52,10 +52,9 @@ jobs:
 
       - name: Authorise Dev2 org
         run: |
-          echo "${{ secrets.JWT_KEY }}" > server.key | base64 --decode > server.key
+          echo "${{ secrets.JWT_KEY }}" | base64 --decode > server.key
           ls -la
           echo "JWT FILE"
-          cat server.key
           echo "........................................"
           sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --set-default-username --alias dev2 --set-default
 
