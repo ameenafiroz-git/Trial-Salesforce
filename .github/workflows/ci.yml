@@ -54,10 +54,8 @@ jobs:
         run: |
           echo "Start"
           echo "${{ secrets.JWT_KEY }}" > server.key
-          echo "Before sfdx"
+          echo "echo sfdx"
           sfdx auth:jwt:grant --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.USERNAME }} --instance-url https://test.salesforce.com --set-default-username --alias dev2
-          echo "after sfdx"
-
       - name: Verify org dev2 login
         run: sf org display --target-org dev2
 
