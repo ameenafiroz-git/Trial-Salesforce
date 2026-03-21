@@ -61,7 +61,7 @@ jobs:
       - name: Check org list
         run: sf org list
 
-      - name: Verify org dev2 login
+      - name: Verify login
         run: sf org display --target-org ${{ secrets.USERNAME }}
 
       - name: Debug files
