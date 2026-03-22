@@ -58,7 +58,7 @@ jobs:
         run: |
           sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
 
-      - name: Verify login
+      - name: Verify login to dev2
         run: sf org display --target-org dev2
 
       - name: Debug files
