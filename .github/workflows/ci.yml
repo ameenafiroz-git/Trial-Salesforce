@@ -50,10 +50,18 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      - name: Authorise Dev2 org
+      - name: Create JWT key file
         run: |
-          echo "${{ secrets.DEV2_AUTH_URL }}" > auth.txt
-          sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
+          echo "${{ secrets.JWT_KEY }}" > server.key
+
+      - name: Authorise using JWT
+        run: |
+          sf org login jwt \
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.USERNAME }} \
+            --alias dev2 \
+            --set-default
 
       - name: Verify login
         run: sf org display --target-org dev2
