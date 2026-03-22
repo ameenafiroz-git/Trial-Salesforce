@@ -54,7 +54,7 @@ jobs:
         run: |
           printf "%s" "${{ secrets.JWT_KEY }}" > server.key
 
-      - name: Authenticate to Salesforce using JWT (Connected App: SFConnect)
+      - name: Authenticate to Salesforce using JWT (Connected App SFConnect)
         run: |
           sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
 
