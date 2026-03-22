@@ -55,12 +55,12 @@ jobs:
           echo "${{ secrets.JWT_KEY }}" > server.key
 
       - name: Authorise using JWT
-        run: >-
+        run: |
           sf org login jwt
-            --client-id ${{ secrets.CLIENT_ID }}
-            --jwt-key-file server.key
-            --username ${{ secrets.USERNAME }}
-            --alias dev2
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.USERNAME }} \
+            --alias dev2 \
             --set-default
 
       - name: Verify login
