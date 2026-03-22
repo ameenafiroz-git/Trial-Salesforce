@@ -104,7 +104,7 @@ jobs:
             echo "empty=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate (PR only)
+      - name: Validate (PR  only)
         if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
         run: |
           sf project deploy start \
