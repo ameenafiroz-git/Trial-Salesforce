@@ -84,7 +84,7 @@ jobs:
             --generate-delta
           fi
 
-      - name: Show delta content
+      - name: Show delta contents
         run: |
           echo "Listing delta folder"
           ls -R delta || echo "No delta found"
