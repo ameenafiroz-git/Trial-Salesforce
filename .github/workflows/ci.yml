@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - dev2
-      - feature/dummy-ci
+      - release/*
 
   push:
     branches:
@@ -50,12 +50,15 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      - name: Authorise Dev2 org
+      - name: Create JWT key file
         run: |
-          echo "${{ secrets.DEV2_AUTH_URL }}" > auth.txt
-          sf org login sfdx-url --sfdx-url-file auth.txt --alias dev2 --set-default
+          printf "%s" "${{ secrets.JWT_KEY }}" > server.key
 
-      - name: Verify login
+      - name: Authenticate to Salesforce using JWT (Connected App SFConnect)
+        run: |
+          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
+
+      - name: Verify login to dev2
         run: sf org display --target-org dev2
 
       - name: Debug files
@@ -81,7 +84,7 @@ jobs:
             --generate-delta
           fi
 
-      - name: Show delta content
+      - name: Show delta contents
         run: |
           echo "Listing delta folder"
           ls -R delta || echo "No delta found"
@@ -96,7 +99,7 @@ jobs:
             echo "empty=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate (PR only)
+      - name: Validate (PR  only)
         if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
         run: |
           sf project deploy start \
