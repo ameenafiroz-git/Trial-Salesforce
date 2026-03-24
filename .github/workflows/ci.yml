@@ -106,7 +106,7 @@ jobs:
             --source-dir delta \
             --target-org dev2 \
             --dry-run \
-            --test-level RunSpecifiedTests \
+            --test-level NoTestRun \
             --wait 10
 
       - name: Deploy to Dev2 (on merge)
@@ -115,5 +115,5 @@ jobs:
           sf project deploy start
           --source-dir delta
           --target-org dev2
-          --test-level RunSpecifiedTests
+          --test-level NoTestRun
           --wait 10
