@@ -61,7 +61,7 @@ jobs:
       - name: Verify login to dev2
         run: sf org display --target-org dev2
 
-      - name: Debug files
+      - name: Debug file
         run: ls -la
 
       - name: Debug metadata
