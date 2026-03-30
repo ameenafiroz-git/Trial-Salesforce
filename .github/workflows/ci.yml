@@ -1,0 +1,119 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - dev2
+      - release/*
+
+  push:
+    branches:
+      - dev2
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test pipeline
+        run: echo "CI is working"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Verify Node and npm
+        run: |
+          node -v
+          npm -v
+
+      - name: Install Salesforce CLI+SGD
+        run: |
+          npm install -g @salesforce/cli
+          echo "Salesforce CLI is installed"
+          echo Y | sf plugins install sfdx-git-delta
+
+      - name: Check plugins
+        run: sf plugins
+
+      - name: Verify org login
+        run: npx @salesforce/cli org list
+
+      - name: Debug secrets
+        run: |
+          echo "Key exists?"
+          echo "${{ secrets.JWT_KEY }}" | wc -c
+
+      - name: Create JWT key file
+        run: |
+          printf "%s" "${{ secrets.JWT_KEY }}" > server.key
+
+      - name: Authenticate to Salesforce using JWT (Connected App SFConnect)
+        run: |
+          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
+
+      - name: Verify login to dev2
+        run: sf org display --target-org dev2
+
+      - name: Debug files
+        run: ls -la
+
+      - name: Debug metadata
+        run: find force-app -type f
+
+      - name: Generate delta
+        run: |
+          mkdir -p delta
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            sf sgd source delta \
+            --to HEAD \
+            --from origin/dev2 \
+            --output-dir delta \
+            --generate-delta
+          else
+            sf sgd source delta \
+            --to HEAD \
+            --from HEAD~1 \
+            --output-dir delta \
+            --generate-delta
+          fi
+
+      - name: Show delta contents
+        run: |
+          echo "Listing delta folder"
+          ls -R delta || echo "No delta found"
+
+      - name: Check delta // to avoid pipeline fails on empty delta
+        id: check_delta
+        run: |
+          if [ -z "$(find delta/force-app -type f -name '*.xml')" ]; then
+            echo "No changes to deploy. Skipping...."
+            echo "empty=true" >> $GITHUB_OUTPUT
+          else
+            echo "empty=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate (PR  only)
+        if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
+        run: |
+          sf project deploy start \
+            --source-dir delta \
+            --target-org dev2 \
+            --dry-run \
+            --test-level NoTestRun \
+            --wait 10
+
+      - name: Deploy to Dev2 (on merge)
+        if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
+        run: >-
+          sf project deploy start
+          --source-dir delta
+          --target-org dev2
+          --test-level NoTestRun
+          --wait 10
