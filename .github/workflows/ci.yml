@@ -50,6 +50,31 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
+      #Install PMD
+      - name: Install PMD
+        run: |
+          wget https://github.com/pmd/pmd/releases/latest/download/pmd-bin.zip
+          unzip pmd-bin.zip
+          mv pmd-bin-* pmd
+      #Run PMD Scan (Apex)
+      - name: Run PMD Scan
+        run: |
+          ./pmd/bin/run.sh pmd \
+            -d force-app \
+            -R category/apex/design.xml,category/apex/bestpractices.xml \
+            -f text \
+            -r pmd-report.txt
+      #Fail pipeline if PMD violations found
+      - name: Check PMD Report
+        run: |
+          if [ -s pmd-report.txt ]; then
+            echo "PMD violations found!"
+            cat pmd-report.txt
+            exit 1
+          else
+            echo "No PMD issues found."
+          fi
+
       - name: Create JWT key file
         run: |
           printf "%s" "${{ secrets.JWT_KEY }}" > server.key
