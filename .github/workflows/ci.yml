@@ -77,6 +77,13 @@ jobs:
             echo "No PMD issues found."
           fi
 
+      - name: Upload PMD Report
+        uses: actions/upload-artfact@v4
+        with:
+          name: pmd-report
+          path: pmd-report.txt
+          retention-days: 2
+
       - name: Create JWT key file
         run: |
           printf "%s" "${{ secrets.JWT_KEY }}" > server.key
