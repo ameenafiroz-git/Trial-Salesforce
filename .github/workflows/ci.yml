@@ -50,6 +50,33 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
+      - name: Install PMD
+        run: |
+          PMD_VERSION=7.3.0
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
+          unzip pmd-dist-${PMD_VERSION}-bin.zip
+          PMD_DIR=$(find . -type d -name "pmd-bin-*")
+          echo "PMD_DIR=$PMD_DIR" >> $GITHUB_ENV
+
+      - name: Run PMD Scan
+        run: |
+          chmod +x $PMD_DIR/bin/pmd
+          $PMD_DIR/bin/pmd check \
+            --dir force-app \
+            --rulesets category/apex/design.xml,category/apex/bestpractices.xml \
+            --format text \
+            --report-file pmd-report.txt
+
+      - name: Check PMD Report
+        run: |
+          if [ -s pmd-report.txt ]; then
+            echo "PMD violations found!"
+            cat pmd-report.txt
+            exit 1
+          else
+            echo "No PMD issues found."
+          fi
+
       - name: Create JWT key file
         run: |
           printf "%s" "${{ secrets.JWT_KEY }}" > server.key
@@ -84,7 +111,7 @@ jobs:
             --generate-delta
           fi
 
-      - name: Show delta contents
+      - name: Show delta content
         run: |
           echo "Listing delta folder"
           ls -R delta || echo "No delta found"
