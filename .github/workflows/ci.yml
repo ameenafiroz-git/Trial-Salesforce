@@ -57,17 +57,19 @@ jobs:
           wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
           unzip pmd-dist-${PMD_VERSION}-bin.zip
           mv pmd-bin-${PMD_VERSION} pmd
+          ls -R pmd   # debug (optional)
 
       # Run PMD Scan
       - name: Run PMD Scan
         run: |
+          chmod +x pmd/bin/run.sh
           ./pmd/bin/run.sh pmd \
             -d force-app \
             -R category/apex/design.xml,category/apex/bestpractices.xml \
             -f text \
             -r pmd-report.txt
 
-      # Fail pipeline if PMD issues found
+      # Fail if PMD issues found
       - name: Check PMD Report
         run: |
           if [ -s pmd-report.txt ]; then
