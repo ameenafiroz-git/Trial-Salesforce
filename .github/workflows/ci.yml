@@ -50,13 +50,15 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      #Install PMD
+      # Install PMD
       - name: Install PMD
         run: |
-          wget https://github.com/pmd/pmd/releases/latest/download/pmd-bin.zip
-          unzip pmd-bin.zip
-          mv pmd-bin-* pmd
-      #Run PMD Scan (Apex)
+          PMD_VERSION=7.3.0
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
+          unzip pmd-dist-${PMD_VERSION}-bin.zip
+          mv pmd-bin-${PMD_VERSION} pmd
+
+      # Run PMD Scan
       - name: Run PMD Scan
         run: |
           ./pmd/bin/run.sh pmd \
@@ -64,7 +66,8 @@ jobs:
             -R category/apex/design.xml,category/apex/bestpractices.xml \
             -f text \
             -r pmd-report.txt
-      #Fail pipeline if PMD violations found
+
+      # Fail pipeline if PMD issues found
       - name: Check PMD Report
         run: |
           if [ -s pmd-report.txt ]; then
