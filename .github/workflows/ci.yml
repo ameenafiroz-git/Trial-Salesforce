@@ -50,38 +50,23 @@ jobs:
           echo "Key exists?"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      # Install PMD
       - name: Install PMD
         run: |
           PMD_VERSION=7.3.0
           wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
           unzip pmd-dist-${PMD_VERSION}-bin.zip
-          mv pmd-bin-${PMD_VERSION} pmd
-          ls -R pmd   # debug (optional)
-
-      # Install PMD
-      - name: Install PMD
-        run: |
-          PMD_VERSION=7.3.0
-          wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
-          unzip pmd-dist-${PMD_VERSION}-bin.zip
-
-          # Detect extracted folder dynamically
           PMD_DIR=$(find . -type d -name "pmd-bin-*")
           echo "PMD_DIR=$PMD_DIR" >> $GITHUB_ENV
 
-      #  Run PMD Scan
       - name: Run PMD Scan
         run: |
-          chmod +x $PMD_DIR/bin/run.sh
+          chmod +x $PMD_DIR/bin/pmd
+          $PMD_DIR/bin/pmd check \
+            --dir force-app \
+            --rulesets category/apex/design.xml,category/apex/bestpractices.xml \
+            --format text \
+            --report-file pmd-report.txt
 
-          $PMD_DIR/bin/run.sh pmd \
-            -d force-app \
-            -R category/apex/design.xml,category/apex/bestpractices.xml \
-            -f text \
-            -r pmd-report.txt
-
-      #  Fail if PMD issues found
       - name: Check PMD Report
         run: |
           if [ -s pmd-report.txt ]; then
