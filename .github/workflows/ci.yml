@@ -10,13 +10,17 @@ on:
     branches:
       - dev2
 
+  permissions:
+    contents: read
+    packages: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
 
     # Docker image for Salesforce CLI
     container:
-      image: salesforce/cli:stable-full
+      image: ghcr.io/salesforcecli/latest
       options: --user root
 
     steps:
