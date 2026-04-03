@@ -18,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: node:20-bullseye
+      image: salesforce/salesforcedx:latest-full
+      options: --user root
 
     steps:
       - name: Checkout code
@@ -32,20 +33,14 @@ jobs:
       - name: Verify Salesforce CLI
         run: sf --version
 
-      - name: Fix apt and upgrade Node to 20
+      - name: Fix apt issues (safe)
         run: |
           rm -f /etc/apt/sources.list.d/pgdg.list || true
           sed -i '/postgresql.org/d' /etc/apt/sources.list || true
-          apt-get clean
-          apt-get update
-          apt-get install -y curl
-          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-          apt-get install -y nodejs
-          node -v
 
-      - name: Install SGD plugin
+      - name: Install SGD plugin (compatible version)
         run: |
-          echo Y | sf plugins install sfdx-git-delta
+          echo Y | sf plugins install sfdx-git-delta@5.0.0
 
       - name: Check plugins
         run: sf plugins
