@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: ghcr.io/salesforcecli/cli:latest
+      image: ghcr.io/salesforcecli/cli:2
       options: --user root
 
     steps:
