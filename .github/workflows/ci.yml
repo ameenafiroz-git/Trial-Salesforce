@@ -157,13 +157,7 @@ jobs:
           </Package>
           EOF
 
-          sf project deploy start \
-            --manifest delta/destructive-package.xml \
-            --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml \
-            --targetn \
-            --test-level NoTestRun \
-            --wait 10-org dev2 \
-            --dry-run
+          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --dry-run --test-level NoTestRun --wait 10
 
       - name: Deploy to Dev2 (on merge)
         if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
@@ -184,9 +178,4 @@ jobs:
           </Package>
           EOF
 
-          sf project deploy start \
-            --manifest delta/destructive-package.xml \
-            --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml \
-            --target-org dev2 \
-            --test-level NoTestRun \
-            --wait 10
+          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --test-level NoTestRun --wait 10
