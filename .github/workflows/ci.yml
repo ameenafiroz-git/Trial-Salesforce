@@ -14,168 +14,172 @@ jobs:
   validate:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  container:
+    image: salesforce/cli:latest
+    options: --user root
 
-      - name: Test pipeline
-        run: echo "CI is working"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+    - name: Test pipeline
+      run: echo "CI is working"
 
-      - name: Verify Node and npm
-        run: |
-          node -v
-          npm -v
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
 
-      - name: Install Salesforce CLI+SGD
-        run: |
-          npm install -g @salesforce/cli
-          echo "Salesforce CLI is installed"
-          echo Y | sf plugins install sfdx-git-delta
+    - name: Verify Node and npm
+      run: |
+        node -v
+        npm -v
 
-      - name: Check plugins
-        run: sf plugins
+    - name: Install Salesforce CLI+SGD
+      run: |
+        npm install -g @salesforce/cli
+        echo "Salesforce CLI is installed"
+        echo Y | sf plugins install sfdx-git-delta
 
-      - name: Verify org login
-        run: npx @salesforce/cli org list
+    - name: Check plugins
+      run: sf plugins
 
-      - name: Debug secrets
-        run: |
-          echo "Key exists?"
-          echo "${{ secrets.JWT_KEY }}" | wc -c
+    - name: Verify org login
+      run: npx @salesforce/cli org list
 
-      - name: Install PMD
-        run: |
-          PMD_VERSION=7.3.0
-          wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
-          unzip pmd-dist-${PMD_VERSION}-bin.zip
-          PMD_DIR=$(find . -type d -name "pmd-bin-*")
-          echo "PMD_DIR=$PMD_DIR" >> $GITHUB_ENV
+    - name: Debug secrets
+      run: |
+        echo "Key exists?"
+        echo "${{ secrets.JWT_KEY }}" | wc -c
 
-      - name: Run PMD Scan
-        run: |
-          chmod +x $PMD_DIR/bin/pmd
-          $PMD_DIR/bin/pmd check \
-            --dir force-app \
-            --rulesets category/apex/design.xml,category/apex/bestpractices.xml \
-            --format text \
-            --report-file pmd-report.txt
+    - name: Install PMD
+      run: |
+        PMD_VERSION=7.3.0
+        wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
+        unzip pmd-dist-${PMD_VERSION}-bin.zip
+        PMD_DIR=$(find . -type d -name "pmd-bin-*")
+        echo "PMD_DIR=$PMD_DIR" >> $GITHUB_ENV
 
-      - name: Check PMD Report
-        run: |
-          if [ -s pmd-report.txt ]; then
-            echo "PMD violations found!"
-            cat pmd-report.txt
-            exit 1
-          else
-            echo "No PMD issues found."
-          fi
+    - name: Run PMD Scan
+      run: |
+        chmod +x $PMD_DIR/bin/pmd
+        $PMD_DIR/bin/pmd check \
+          --dir force-app \
+          --rulesets category/apex/design.xml,category/apex/bestpractices.xml \
+          --format text \
+          --report-file pmd-report.txt
 
-      - name: Create JWT key file
-        run: |
-          printf "%s" "${{ secrets.JWT_KEY }}" > server.key
+    - name: Check PMD Report
+      run: |
+        if [ -s pmd-report.txt ]; then
+          echo "PMD violations found!"
+          cat pmd-report.txt
+          exit 1
+        else
+          echo "No PMD issues found."
+        fi
 
-      - name: Authenticate to Salesforce using JWT (Connected App SFConnect)
-        run: |
-          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
+    - name: Create JWT key file
+      run: |
+        printf "%s" "${{ secrets.JWT_KEY }}" > server.key
 
-      - name: Verify login to dev2
-        run: sf org display --target-org dev2
+    - name: Authenticate to Salesforce using JWT (Connected App SFConnect)
+      run: |
+        sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
 
-      - name: Debug files
-        run: ls -la
+    - name: Verify login to dev2
+      run: sf org display --target-org dev2
 
-      - name: Debug metadata
-        run: find force-app -type f
+    - name: Debug files
+      run: ls -la
 
-      - name: Generate delta
-        run: |
-          mkdir -p delta
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            sf sgd source delta \
-            --to HEAD \
-            --from origin/dev2 \
-            --output-dir delta \
-            --generate-delta
-          else
-            sf sgd source delta \
-            --to HEAD \
-            --from HEAD~1 \
-            --output-dir delta \
-            --generate-delta
-          fi
+    - name: Debug metadata
+      run: find force-app -type f
 
-      - name: Show delta content
-        run: |
-          echo "Listing delta folder"
-          ls -R delta || echo "No delta found"
+    - name: Generate delta
+      run: |
+        mkdir -p delta
+        if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+          sf sgd source delta \
+          --to HEAD \
+          --from origin/dev2 \
+          --output-dir delta \
+          --generate-delta
+        else
+          sf sgd source delta \
+          --to HEAD \
+          --from HEAD~1 \
+          --output-dir delta \
+          --generate-delta
+        fi
 
-      - name: Check destructive changes
-        id: check_destructive
-        run: |
-          if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
-            echo "destructive=true" >> $GITHUB_OUTPUT
-            echo "Destructive changes found"
-          else
-            echo "destructive=false" >> $GITHUB_OUTPUT
-            echo "No destructive changes found"
-          fi
+    - name: Show delta content
+      run: |
+        echo "Listing delta folder"
+        ls -R delta || echo "No delta found"
 
-      - name: Check delta // to avoid pipeline fails on empty delta
-        id: check_delta
-        run: |
-          if [ -z "$(find delta/force-app -type f -name '*.xml')" ]; then
-            echo "No changes to deploy. Skipping...."
-            echo "empty=true" >> $GITHUB_OUTPUT
-          else
-            echo "empty=false" >> $GITHUB_OUTPUT
-          fi
+    - name: Check destructive changes
+      id: check_destructive
+      run: |
+        if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
+          echo "destructive=true" >> $GITHUB_OUTPUT
+          echo "Destructive changes found"
+        else
+          echo "destructive=false" >> $GITHUB_OUTPUT
+          echo "No destructive changes found"
+        fi
 
-      - name: Validate (PR  only)
-        if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
-        run: |
-          sf project deploy start \
-            --source-dir delta \
-            --target-org dev2 \
-            --dry-run \
-            --test-level NoTestRun \
-            --wait 10
+    - name: Check delta // to avoid pipeline fails on empty delta
+      id: check_delta
+      run: |
+        if [ -z "$(find delta/force-app -type f -name '*.xml')" ]; then
+          echo "No changes to deploy. Skipping...."
+          echo "empty=true" >> $GITHUB_OUTPUT
+        else
+          echo "empty=false" >> $GITHUB_OUTPUT
+        fi
 
-      - name: Validate destructive changes (PR only)
-        if: github.event_name == 'pull_request' && steps.check_destructive.outputs.destructive == 'true'
-        run: |
-          cat <<EOF > delta/destructive-package.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-              <version>61.0</version>
-          </Package>
-          EOF
-
-          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --dry-run --test-level NoTestRun --wait 10
-
-      - name: Deploy to Dev2 (on merge)
-        if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
-        run: >-
-          sf project deploy start
-          --source-dir delta
-          --target-org dev2
-          --test-level NoTestRun
+    - name: Validate (PR  only)
+      if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
+      run: |
+        sf project deploy start \
+          --source-dir delta \
+          --target-org dev2 \
+          --dry-run \
+          --test-level NoTestRun \
           --wait 10
 
-      - name: Deploy destructive changes to Dev2 (on merge)
-        if: github.event_name == 'push' && steps.check_destructive.outputs.destructive == 'true'
-        run: |
-          cat <<EOF > delta/destructive-package.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-              <version>61.0</version>
-          </Package>
-          EOF
+    - name: Validate destructive changes (PR only)
+      if: github.event_name == 'pull_request' && steps.check_destructive.outputs.destructive == 'true'
+      run: |
+        cat <<EOF > delta/destructive-package.xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+            <version>61.0</version>
+        </Package>
+        EOF
 
-          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --test-level NoTestRun --wait 10
+        sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --dry-run --test-level NoTestRun --wait 10
+
+    - name: Deploy to Dev2 (on merge)
+      if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
+      run: >-
+        sf project deploy start
+        --source-dir delta
+        --target-org dev2
+        --test-level NoTestRun
+        --wait 10
+
+    - name: Deploy destructive changes to Dev2 (on merge)
+      if: github.event_name == 'push' && steps.check_destructive.outputs.destructive == 'true'
+      run: |
+        cat <<EOF > delta/destructive-package.xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+            <version>61.0</version>
+        </Package>
+        EOF
+
+        sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --test-level NoTestRun --wait 10
