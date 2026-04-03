@@ -20,6 +20,7 @@ jobs:
 
     container:
       image: salesforce/salesforcedx:latest-full
+      image: node:20
       options: --user root
 
     steps:
@@ -33,16 +34,6 @@ jobs:
 
       - name: Verify Salesforce CLI
         run: sf --version
-
-      - name: Fix apt and upgrade Node to 20
-        run: |
-          rm -f /etc/apt/sources.list.d/pgdg.list || true
-          apt-get clean
-          apt-get update
-          apt-get install -y curl
-          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-          apt-get install -y nodejs
-          node -v
 
       - name: Install SGD plugin
         run: |
