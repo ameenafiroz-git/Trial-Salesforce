@@ -36,10 +36,9 @@ jobs:
       - name: Verify Salesforce CLI
         run: sf --version
 
-      - name: Install SGD plugin (Node compatibility fix)
-        run: |
-          export NODE_OPTIONS=--openssl-legacy-provider
-          echo Y | sf plugins install sfdx-git-delta
+      - name: Install SGD plugin (compatible version)
+         run: |
+         echo Y | sf plugins install sfdx-git-delta@5.0.5
 
       - name: Check plugins
         run: sf plugins
