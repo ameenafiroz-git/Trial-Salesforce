@@ -16,7 +16,7 @@ jobs:
 
     # Docker image for Salesforce CLI
     container:
-      image: salesforce/cli:latest
+      image: salesforce/cli:stable-full
       options: --user root
 
     steps:
