@@ -98,8 +98,7 @@ jobs:
         run: sf org display --target-org dev2
 
       - name: Fix git safe directory
-        run: |
-          git config --global --add safe.directory "*"
+        run: git config --global --add safe.directory/__w/Trial-Salesforce
 
       - name: Fetch base branch
         run: git fetch origin dev2
@@ -111,13 +110,13 @@ jobs:
             sf sgd source delta \
               --to HEAD \
               --from origin/dev2 \
-              --output-dir delta \
+              --output delta \
               --generate-delta
           else
             sf sgd source delta \
               --to HEAD \
               --from HEAD~1 \
-              --output-dir delta \
+              --output delta \
               --generate-delta
           fi
 
