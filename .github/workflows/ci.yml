@@ -97,6 +97,9 @@ jobs:
       - name: Verify login
         run: sf org display --target-org dev2
 
+      - name: Fix git safe directory
+        run: git config --global --add safe.directory/__w/Trial-Salesforce
+
       - name: Fetch base branch
         run: git fetch origin dev2
 
