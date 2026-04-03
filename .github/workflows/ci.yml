@@ -10,17 +10,16 @@ on:
     branches:
       - dev2
 
-  permissions:
-    contents: read
-    packages: read
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
 
-    # Docker image for Salesforce CLI
     container:
-      image: ghcr.io/salesforcecli/latest
+      image: ghcr.io/salesforcecli/cli:latest
       options: --user root
 
     steps:
@@ -32,8 +31,12 @@ jobs:
       - name: Test pipeline
         run: echo "CI is working"
 
-      - name: Verify CLI
+      - name: Verify Salesforce CLI
         run: sf --version
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y unzip wget git
 
       - name: Install SGD plugin
         run: |
@@ -42,12 +45,12 @@ jobs:
       - name: Check plugins
         run: sf plugins
 
-      - name: Verify org login
+      - name: Verify org list
         run: sf org list
 
       - name: Debug secrets
         run: |
-          echo "Key exists?"
+          echo "JWT length:"
           echo "${{ secrets.JWT_KEY }}" | wc -c
 
       - name: Install PMD
@@ -81,24 +84,18 @@ jobs:
         run: |
           printf "%s" "${{ secrets.JWT_KEY }}" > server.key
 
-      - name: Authenticate to Salesforce using JWT
+      - name: Authenticate to Salesforce (JWT)
         run: |
           sf org login jwt \
-          --client-id ${{ secrets.CLIENT_ID }} \
-          --jwt-key-file server.key \
-          --username "${{ secrets.USERNAME }}" \
-          --instance-url https://test.salesforce.com \
-          --alias dev2 \
-          --set-default
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username "${{ secrets.USERNAME }}" \
+            --instance-url https://test.salesforce.com \
+            --alias dev2 \
+            --set-default
 
-      - name: Verify login to dev2
+      - name: Verify login
         run: sf org display --target-org dev2
-
-      - name: Debug files
-        run: ls -la
-
-      - name: Debug metadata
-        run: find force-app -type f
 
       - name: Fetch base branch
         run: git fetch origin dev2
@@ -108,22 +105,20 @@ jobs:
           mkdir -p delta
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             sf sgd source delta \
-            --to HEAD \
-            --from origin/dev2 \
-            --output-dir delta \
-            --generate-delta
+              --to HEAD \
+              --from origin/dev2 \
+              --output-dir delta \
+              --generate-delta
           else
             sf sgd source delta \
-            --to HEAD \
-            --from HEAD~1 \
-            --output-dir delta \
-            --generate-delta
+              --to HEAD \
+              --from HEAD~1 \
+              --output-dir delta \
+              --generate-delta
           fi
 
-      - name: Show delta content
-        run: |
-          echo "Listing delta folder"
-          ls -R delta || echo "No delta found"
+      - name: Show delta
+        run: ls -R delta || echo "No delta found"
 
       - name: Check destructive changes
         id: check_destructive
@@ -153,7 +148,7 @@ jobs:
             --test-level NoTestRun \
             --wait 10
 
-      - name: Validate destructive changes (PR only)
+      - name: Validate destructive (PR only)
         if: github.event_name == 'pull_request' && steps.check_destructive.outputs.destructive == 'true'
         run: |
           cat <<EOF > delta/destructive-package.xml
@@ -180,7 +175,7 @@ jobs:
             --test-level NoTestRun \
             --wait 10
 
-      - name: Deploy destructive changes to Dev2 (on merge)
+      - name: Deploy destructive (on merge)
         if: github.event_name == 'push' && steps.check_destructive.outputs.destructive == 'true'
         run: |
           cat <<EOF > delta/destructive-package.xml
