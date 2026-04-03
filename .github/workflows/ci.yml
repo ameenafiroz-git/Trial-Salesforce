@@ -36,7 +36,7 @@ jobs:
       - name: Verify Salesforce CLI
         run: sf --version
 
-      - name: Install SGD plugin (compatible version)
+      - name: Install SGD plugin (Node 18 compatible)
         run: |
           echo Y | sf plugins install sfdx-git-delta@5.0.5
 
@@ -81,22 +81,27 @@ jobs:
       - name: Show delta
         run: ls -R delta || echo "No delta found"
 
+      - name: Check delta
+        id: check_delta
+        run: |
+          if [ -z "$(find delta -type f -not -path '*destructiveChanges*')" ]; then
+            echo "empty=true" >> $GITHUB_OUTPUT
+          else
+            echo "empty=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if no changes
+        if: steps.check_delta.outputs.empty == 'true'
+        run: echo "No changes detected. Skipping deployment."
+
       - name: Check destructive changes
         id: check_destructive
+        if: steps.check_delta.outputs.empty == 'false'
         run: |
           if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
             echo "destructive=true" >> $GITHUB_OUTPUT
           else
             echo "destructive=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check delta
-        id: check_delta
-        run: |
-          if [ -z "$(find delta -type f -name '*.xml')" ]; then
-            echo "empty=true" >> $GITHUB_OUTPUT
-          else
-            echo "empty=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Validate (PR only)
