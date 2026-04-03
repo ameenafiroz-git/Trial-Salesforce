@@ -36,14 +36,9 @@ jobs:
       - name: Verify Salesforce CLI
         run: sf --version
 
-      - name: Upgrade Node to 20 (no apt issues)
+      - name: Install SGD plugin (Node compatibility fix)
         run: |
-          npm install -g n
-          n 20
-          node -v
-
-      - name: Install SGD plugin
-        run: |
+          export NODE_OPTIONS=--openssl-legacy-provider
           echo Y | sf plugins install sfdx-git-delta
 
       - name: Check plugins
