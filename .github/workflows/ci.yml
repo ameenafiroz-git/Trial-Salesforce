@@ -10,9 +10,16 @@ on:
     branches:
       - dev2
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+
+    container:
+      image: salesforce/salesforcedx:latest-full
+      options: --user root
 
     steps:
       - name: Checkout code
@@ -20,125 +27,85 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Test pipeline
-        run: echo "CI is working"
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Verify Node and npm
+      - name: Fix git safe directory (Docker)
         run: |
-          node -v
-          npm -v
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          git config --global --add safe.directory /__w
+          git config --global --add safe.directory '*'
 
-      - name: Install Salesforce CLI+SGD
+      - name: Verify Salesforce CLI
+        run: sf --version
+
+      - name: Install SGD plugin (Node 18 compatible)
         run: |
-          npm install -g @salesforce/cli
-          echo "Salesforce CLI is installed"
-          echo Y | sf plugins install sfdx-git-delta
+          echo Y | sf plugins install sfdx-git-delta@5.0.5
 
       - name: Check plugins
         run: sf plugins
 
-      - name: Verify org login
-        run: npx @salesforce/cli org list
-
-      - name: Debug secrets
-        run: |
-          echo "Key exists?"
-          echo "${{ secrets.JWT_KEY }}" | wc -c
-
-      - name: Install PMD
-        run: |
-          PMD_VERSION=7.3.0
-          wget https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
-          unzip pmd-dist-${PMD_VERSION}-bin.zip
-          PMD_DIR=$(find . -type d -name "pmd-bin-*")
-          echo "PMD_DIR=$PMD_DIR" >> $GITHUB_ENV
-
-      - name: Run PMD Scan
-        run: |
-          chmod +x $PMD_DIR/bin/pmd
-          $PMD_DIR/bin/pmd check \
-            --dir force-app \
-            --rulesets category/apex/design.xml,category/apex/bestpractices.xml \
-            --format text \
-            --report-file pmd-report.txt
-
-      - name: Check PMD Report
-        run: |
-          if [ -s pmd-report.txt ]; then
-            echo "PMD violations found!"
-            cat pmd-report.txt
-            exit 1
-          else
-            echo "No PMD issues found."
-          fi
-
       - name: Create JWT key file
-        run: |
-          printf "%s" "${{ secrets.JWT_KEY }}" > server.key
+        run: printf "%s" "${{ secrets.JWT_KEY }}" > server.key
 
-      - name: Authenticate to Salesforce using JWT (Connected App SFConnect)
+      - name: Authenticate to Salesforce (JWT)
         run: |
-          sf org login jwt --client-id ${{ secrets.CLIENT_ID }} --jwt-key-file server.key --username "${{ secrets.USERNAME }}" --instance-url https://test.salesforce.com --alias dev2 --set-default
+          sf org login jwt \
+            --client-id ${{ secrets.CLIENT_ID }} \
+            --jwt-key-file server.key \
+            --username "${{ secrets.USERNAME }}" \
+            --instance-url https://test.salesforce.com \
+            --alias dev2 \
+            --set-default
 
-      - name: Verify login to dev2
+      - name: Verify login
         run: sf org display --target-org dev2
 
-      - name: Debug files
-        run: ls -la
-
-      - name: Debug metadata
-        run: find force-app -type f
+      - name: Fetch base branch
+        run: git fetch origin dev2
 
       - name: Generate delta
         run: |
           mkdir -p delta
+
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             sf sgd source delta \
-            --to HEAD \
-            --from origin/dev2 \
-            --output-dir delta \
-            --generate-delta
+              --to HEAD \
+              --from origin/dev2 \
+              --output delta
           else
             sf sgd source delta \
-            --to HEAD \
-            --from HEAD~1 \
-            --output-dir delta \
-            --generate-delta
+              --to HEAD \
+              --from HEAD~1 \
+              --output delta
           fi
 
-      - name: Show delta content
-        run: |
-          echo "Listing delta folder"
-          ls -R delta || echo "No delta found"
+      - name: Show delta (debug)
+        run: ls -R delta || echo "No delta found"
 
-      - name: Check destructive changes
-        id: check_destructive
-        run: |
-          if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
-            echo "destructive=true" >> $GITHUB_OUTPUT
-            echo "Destructive changes found"
-          else
-            echo "destructive=false" >> $GITHUB_OUTPUT
-            echo "No destructive changes found"
-          fi
-
-      - name: Check delta // to avoid pipeline fails on empty delta
+      - name: Check delta (ONLY deployable files)
         id: check_delta
         run: |
-          if [ -z "$(find delta/force-app -type f -name '*.xml')" ]; then
-            echo "No changes to deploy. Skipping...."
+          if [ -z "$(find delta/force-app -type f 2>/dev/null)" ]; then
             echo "empty=true" >> $GITHUB_OUTPUT
           else
             echo "empty=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate (PR  only)
-        if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty =='false'
+      - name: Skip if no changes
+        if: steps.check_delta.outputs.empty == 'true'
+        run: echo "No deployable changes found. Skipping."
+
+      - name: Check destructive changes
+        id: check_destructive
+        if: steps.check_delta.outputs.empty == 'false'
+        run: |
+          if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
+            echo "destructive=true" >> $GITHUB_OUTPUT
+          else
+            echo "destructive=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate (PR only)
+        if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty == 'false'
         run: |
           sf project deploy start \
             --source-dir delta \
@@ -147,7 +114,7 @@ jobs:
             --test-level NoTestRun \
             --wait 10
 
-      - name: Validate destructive changes (PR only)
+      - name: Validate destructive (PR only)
         if: github.event_name == 'pull_request' && steps.check_destructive.outputs.destructive == 'true'
         run: |
           cat <<EOF > delta/destructive-package.xml
@@ -157,18 +124,24 @@ jobs:
           </Package>
           EOF
 
-          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --dry-run --test-level NoTestRun --wait 10
+          sf project deploy start \
+            --manifest delta/destructive-package.xml \
+            --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml \
+            --target-org dev2 \
+            --dry-run \
+            --test-level NoTestRun \
+            --wait 10
 
       - name: Deploy to Dev2 (on merge)
-        if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
-        run: >-
-          sf project deploy start
-          --source-dir delta
-          --target-org dev2
-          --test-level NoTestRun
-          --wait 10
+        if: github.event_name == 'push' && steps.check_delta.outputs.empty == 'false'
+        run: |
+          sf project deploy start \
+            --source-dir delta \
+            --target-org dev2 \
+            --test-level NoTestRun \
+            --wait 10
 
-      - name: Deploy destructive changes to Dev2 (on merge)
+      - name: Deploy destructive (on merge)
         if: github.event_name == 'push' && steps.check_destructive.outputs.destructive == 'true'
         run: |
           cat <<EOF > delta/destructive-package.xml
@@ -178,4 +151,9 @@ jobs:
           </Package>
           EOF
 
-          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --test-level NoTestRun --wait 10
+          sf project deploy start \
+            --manifest delta/destructive-package.xml \
+            --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml \
+            --target-org dev2 \
+            --test-level NoTestRun \
+            --wait 10

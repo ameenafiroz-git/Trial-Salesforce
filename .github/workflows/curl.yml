@@ -1,0 +1,37 @@
+name: PR Dev2 to Release
+
+on:
+  push:
+    branches:
+      - dev2
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if PR already exists
+        id: check_pr
+        run: |
+          RESPONSE=$(curl -s \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:dev2\&base=release)
+
+          if echo "$RESPONSE" | grep -q '"id"'; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check_pr.outputs.exists == 'false'
+        run: |
+          curl -X POST https://api.github.com/repos/${{ github.repository }}/pulls \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github+json" \
+          -d '{
+            "title": "Auto PR: Dev2 to Release",
+            "head": "dev2",
+            "base": "release",
+            "body": "Automatically created after Dev2 deployment"
+          }'
