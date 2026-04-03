@@ -34,6 +34,15 @@ jobs:
       - name: Verify Salesforce CLI
         run: sf --version
 
+      #  FIX: Upgrade Node to support SGD plugin
+      - name: Upgrade Node to 20
+        run: |
+          apt-get update
+          apt-get install -y curl
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt-get install -y nodejs
+          node -v
+
       - name: Install SGD plugin
         run: |
           echo Y | sf plugins install sfdx-git-delta
