@@ -14,6 +14,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
 
+  # Docker image for Salesforce CLI
   container:
     image: salesforce/cli:latest
     options: --user root
