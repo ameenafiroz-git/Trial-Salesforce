@@ -78,13 +78,13 @@ jobs:
               --output delta
           fi
 
-      - name: Show delta
+      - name: Show delta (debug)
         run: ls -R delta || echo "No delta found"
 
-      - name: Check delta
+      - name: Check delta (ONLY deployable files)
         id: check_delta
         run: |
-          if [ -z "$(find delta -type f -not -path '*destructiveChanges*')" ]; then
+          if [ -z "$(find delta/force-app -type f 2>/dev/null)" ]; then
             echo "empty=true" >> $GITHUB_OUTPUT
           else
             echo "empty=false" >> $GITHUB_OUTPUT
@@ -92,7 +92,7 @@ jobs:
 
       - name: Skip if no changes
         if: steps.check_delta.outputs.empty == 'true'
-        run: echo "No changes detected. Skipping deployment."
+        run: echo "No deployable changes found. Skipping."
 
       - name: Check destructive changes
         id: check_destructive
