@@ -18,8 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: salesforce/salesforcedx:latest-full
-      options: --user root
+      image: node:20-bullseye
 
     steps:
       - name: Checkout code
