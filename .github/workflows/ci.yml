@@ -37,8 +37,8 @@ jobs:
         run: sf --version
 
       - name: Install SGD plugin (compatible version)
-         run: |
-         echo Y | sf plugins install sfdx-git-delta@5.0.5
+        run: |
+          echo Y | sf plugins install sfdx-git-delta@5.0.5
 
       - name: Check plugins
         run: sf plugins
