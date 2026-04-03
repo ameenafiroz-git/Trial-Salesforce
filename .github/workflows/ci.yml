@@ -116,6 +116,17 @@ jobs:
           echo "Listing delta folder"
           ls -R delta || echo "No delta found"
 
+      - name: Check destructive changes
+        id: check_destructive
+        run: |
+          if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
+            echo "destructive=true" >> $GITHUB_OUTPUT
+            echo "Destructive changes found"
+          else
+            echo "destructive=false" >> $GITHUB_OUTPUT
+            echo "No destructive changes found"
+          fi
+
       - name: Check delta // to avoid pipeline fails on empty delta
         id: check_delta
         run: |
@@ -136,6 +147,18 @@ jobs:
             --test-level NoTestRun \
             --wait 10
 
+      - name: Validate destructive changes (PR only)
+        if: github.event_name == 'pull_request' && steps.check_destructive.outputs.destructive == 'true'
+        run: |
+          cat <<EOF > delta/destructive-package.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+              <version>61.0</version>
+          </Package>
+          EOF
+
+          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --dry-run --test-level NoTestRun --wait 10
+
       - name: Deploy to Dev2 (on merge)
         if: github.event_name == 'push' && steps.check_delta.outputs.empty =='false'
         run: >-
@@ -144,3 +167,15 @@ jobs:
           --target-org dev2
           --test-level NoTestRun
           --wait 10
+
+      - name: Deploy destructive changes to Dev2 (on merge)
+        if: github.event_name == 'push' && steps.check_destructive.outputs.destructive == 'true'
+        run: |
+          cat <<EOF > delta/destructive-package.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+              <version>61.0</version>
+          </Package>
+          EOF
+
+          sf project deploy start --manifest delta/destructive-package.xml --post-destructive-changes delta/destructiveChanges/destructiveChanges.xml --target-org dev2 --test-level NoTestRun --wait 10
