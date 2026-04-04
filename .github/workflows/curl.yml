@@ -46,15 +46,21 @@ jobs:
       - name: Update Pull Request
         if: steps.check_pr.outputs.exists == 'true'
         run: |
-          PR_NUMBER=$(curl -s \
+          RESPONSE=$(curl -s \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-           https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:dev2&base=release/30.3.26 \
-           | jq -r '.[0].number')
-           echo "PR_NUMBER=$PR_NUMBER"
-           curl -X PATCH https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER \
-           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-           -H "Accept: application/vnd.github+json" \
-           -d '{
+          "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:dev2&base=release/30.3.26")
+          echo "RESPONSE=$RESPONSE"
+          PR_NUMBER=$(echo "$RESPONSE" | jq -r '.[0].number')
+          echo "PR_NUMBER=$PR_NUMBER"
+          # 🔒 Safety check
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "No PR found. Skipping update."
+            exit 0
+          fi
+          curl -X PATCH "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github+json" \
+          -d '{
             "title": "Updated PR: Dev2 to Release",
             "body": "Updated automatically after new changes"
-           }'
+          }'
