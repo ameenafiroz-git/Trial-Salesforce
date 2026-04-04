@@ -19,7 +19,7 @@ jobs:
         run: |
           RESPONSE=$(curl -s \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:dev2\&base=release)
+          https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:dev2\&base=release/30.3.26)
 
           if echo "$RESPONSE" | grep -q '"id"'; then
             echo "exists=true" >> $GITHUB_OUTPUT
