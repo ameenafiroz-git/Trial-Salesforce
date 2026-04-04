@@ -36,6 +36,6 @@ jobs:
           -d '{
             "title": "Auto PR: Dev2 to Release",
             "head": "dev2",
-            "base": "release",
+            "base": "release/30.3.26",
             "body": "Automatically created after Dev2 deployment"
           }'
