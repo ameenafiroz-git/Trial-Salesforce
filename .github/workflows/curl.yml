@@ -40,6 +40,9 @@ jobs:
             "body": "Automatically created after Dev2 deployment"
           }'
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Update Pull Request
         if: steps.check_pr.outputs.exists == 'true'
         run: |
