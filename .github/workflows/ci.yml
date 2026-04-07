@@ -116,6 +116,10 @@ jobs:
       - name: Show delta (debug)
         run: ls -R delta || echo "No delta found"
 
+      - name: Print destructive XML
+        run: |
+          cat delta/destructiveChanges/destructiveChanges.xml
+
       - name: Check delta (ONLY deployable files)
         id: check_delta
         run: |
@@ -125,13 +129,13 @@ jobs:
             echo "empty=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Skip if no changes
+      - name: Skip deploy if no deployable changes
         if: steps.check_delta.outputs.empty == 'true'
         run: echo "No deployable changes found. Skipping."
 
       - name: Check destructive changes
         id: check_destructive
-        if: steps.check_delta.outputs.empty == 'false'
+        if: always()
         run: |
           if [ -f delta/destructiveChanges/destructiveChanges.xml ] && grep -q "<members>" delta/destructiveChanges/destructiveChanges.xml; then
             echo "destructive=true" >> $GITHUB_OUTPUT
