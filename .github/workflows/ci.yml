@@ -116,6 +116,10 @@ jobs:
       - name: Show delta (debug)
         run: ls -R delta || echo "No delta found"
 
+      - name: Print destructive XML
+        run: |
+          cat delta/destructiveChanges/destructiveChanges.xml
+
       - name: Check delta (ONLY deployable files)
         id: check_delta
         run: |
