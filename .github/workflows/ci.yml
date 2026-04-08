@@ -105,7 +105,8 @@ jobs:
             sf sgd source delta \
               --to HEAD \
               --from origin/dev2 \
-              --output delta
+              --output delta \
+              --source force-app
           else
             sf sgd source delta \
               --to HEAD \
@@ -123,7 +124,7 @@ jobs:
       - name: Check delta (ONLY deployable files)
         id: check_delta
         run: |
-          if [ -z "$(find delta/force-app -type f 2>/dev/null)" ]; then
+          if [ -z "$(find delta -type f -name '*.xml' 2>/dev/null)" ]; then
             echo "empty=true" >> $GITHUB_OUTPUT
           else
             echo "empty=false" >> $GITHUB_OUTPUT
@@ -147,7 +148,7 @@ jobs:
         if: github.event_name == 'pull_request' && steps.check_delta.outputs.empty == 'false'
         run: |
           sf project deploy start \
-            --source-dir delta \
+            --manifest delta/package/package.xml \
             --target-org dev2 \
             --dry-run \
             --test-level NoTestRun \
