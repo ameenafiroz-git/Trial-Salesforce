@@ -176,7 +176,7 @@ jobs:
         if: github.event_name == 'push' && steps.check_delta.outputs.empty == 'false'
         run: |
           sf project deploy start \
-            --source-dir delta \
+            --manifest delta/package/package.xml \
             --target-org dev2 \
             --test-level NoTestRun \
             --wait 10
