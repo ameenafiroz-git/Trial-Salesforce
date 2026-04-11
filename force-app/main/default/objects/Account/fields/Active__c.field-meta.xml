@@ -45,9 +45,9 @@
                 <label>Test2</label>
             </value>
             <value>
-                <fullName>Rating 3</fullName>
+                <fullName>Rating 3 Updated</fullName>
                 <default>false</default>
-                <label>Rating 3</label>
+                <label>Rating 3 Updated</label>
             </value>
         </valueSetDefinition>
     </valueSet>
