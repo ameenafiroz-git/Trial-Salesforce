@@ -24,6 +24,26 @@
                 <default>false</default>
                 <label>N/A</label>
             </value>
+            <value>
+                <fullName>Moderate</fullName>
+                <default>false</default>
+                <label>Moderate</label>
+            </value>
+            <value>
+                <fullName>Medium</fullName>
+                <default>false</default>
+                <label>Medium</label>
+            </value>
+            <value>
+                <fullName>Test1</fullName>
+                <default>false</default>
+                <label>Test1</label>
+            </value>
+            <value>
+                <fullName>Test2</fullName>
+                <default>false</default>
+                <label>Test2</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
