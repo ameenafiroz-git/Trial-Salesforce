@@ -24,6 +24,11 @@
                 <default>false</default>
                 <label>N/A</label>
             </value>
+            <value>
+                <fullName>Moderate</fullName>
+                <default>false</default>
+                <label>Moderate</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
